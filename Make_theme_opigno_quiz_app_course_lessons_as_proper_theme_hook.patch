@@ -1,0 +1,26 @@
+Index: opigno_quiz_app.module
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- opigno_quiz_app.module	(date 1547550591000)
++++ opigno_quiz_app.module	(date 1547618696000)
+@@ -550,6 +550,9 @@
+     'opigno_quiz_app_sort_course_quizzes_form' => array(
+       'render element' => 'form',
+     ),
++    'opigno_quiz_app_course_lessons' => array(
++      'variables' => array('courses' => NULL),
++    ),
+   );
+ }
+ 
+@@ -1777,7 +1780,7 @@
+   $displayinfo['courses']=$lessons_;
+   if (!empty($lessons_))
+   {
+-    return theme_opigno_quiz_app_course_lessons($displayinfo);
++    return theme('opigno_quiz_app_course_lessons', $displayinfo);
+   }
+ }
+ 
