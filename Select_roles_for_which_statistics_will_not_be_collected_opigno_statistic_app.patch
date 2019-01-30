@@ -1,0 +1,98 @@
+Index: profiles/opigno_lms/modules/opigno/opigno_statistics_app/opigno_statistics_app.module
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- profiles/opigno_lms/modules/opigno/opigno_statistics_app/opigno_statistics_app.module	(date 1548317249000)
++++ profiles/opigno_lms/modules/opigno/opigno_statistics_app/opigno_statistics_app.module	(date 1548748333000)
+@@ -75,9 +75,37 @@
+     'page arguments' => array(1,'user_page' => false),
+     'file' => 'includes/user/user.pages.inc',
+   );
++
++  $items['admin/opigno/system/opigno-statistics-roles'] = array(
++    'title' => 'Opigno statistics roles',
++    'description' => 'Change recording statistics for specific roles',
++    'page callback' => 'drupal_get_form',
++    'page arguments' => ['_opigno_statistics_app_lms_roles_information_settings'],
++    'access arguments' => ['administer LMS roles configuration for statistics'],
++  );
++
+   return $items;
+ }
+ 
++function _opigno_statistics_app_lms_roles_information_settings() {
++  $roles = user_roles();
++
++  $form['lms_roles'] = array(
++    '#type' => 'fieldset',
++    '#title' => t('Opigno statistics roles'),
++    '#description' => t("Choose roles for which you don't want to collect statistics"),
++  );
++  $form['lms_roles']['lms_roles'] = array(
++    '#type' => 'select',
++    '#title' => t('Roles to ignore'),
++    '#multiple' => TRUE,
++    '#options' => $roles,
++    '#default_value' => variable_get('lms_roles', array()),
++  );
++
++  return system_settings_form($form);
++}
++
+ /**
+  * Implements hook_menu_alter().
+  */
+@@ -195,7 +223,11 @@
+     'view all opigno user statistics' => array(
+       'title' => t('View all Opigno user statistics'),
+       'description' => t('Allows the user to view all user Opigno statistics'),
+-    )
++    ),
++    'administer LMS roles configuration for statistics' => array(
++      'title' => t('Administer Opigno LMS roles for statistics'),
++      'description' => t('Perform administration tasks for Opigno LMS roles.'),
++    ),
+   );
+ }
+ 
+@@ -243,6 +275,11 @@
+   global $user;
+   drupal_bootstrap(DRUPAL_BOOTSTRAP_VARIABLES);
+   if ($user->uid) {
++
++    if (_opigno_statistics_app_should_statistics_be_collected_for_user($user)) {
++      return;
++    };
++
+     $month_year = mktime(0, 0, 0, date('m', time()), 1);
+     if (arg(0) == 'node' && is_numeric(arg(1))) {
+ 
+@@ -391,6 +428,10 @@
+ function opigno_statistics_app_handle_new_quiz_score($quiz, $score) {
+   global $user;
+ 
++  if (_opigno_statistics_app_should_statistics_be_collected_for_user($user)) {
++    return;
++  };
++
+   $user_groups = og_get_groups_by_user($user, 'node');
+   foreach($quiz->og_group_ref[LANGUAGE_NONE] as $course_nid_array)
+@@ -657,6 +698,17 @@
+   return $blocks;
+ }
+ 
++function _opigno_statistics_app_should_statistics_be_collected_for_user($user) {
++  $forbidden_roles = variable_get('lms_roles', array());
++  foreach ($user->roles as $rid => $_) {
++    if (array_key_exists($rid, $forbidden_roles)) {
++      return TRUE;
++    }
++  }
++  return FALSE;
++}
++
++
+ 
+ // TODO: Check if the node still exists before showing the url to the statistics page. If the node doesn't exists, redirect to an url like "old/node/%id/stats".
+ // TODO: Do the same for the users
